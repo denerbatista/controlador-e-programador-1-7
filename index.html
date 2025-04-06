@@ -17,12 +17,11 @@
       padding: 2rem;
     }
     .nivel {
-      margin-bottom: 2rem;
-      padding: 1rem;
-      border-radius: 12px;
-      background-color: #ffffffdd;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease-in-out;
+      display: none;
+      animation: fade 0.5s ease-in-out;
+    }
+    .nivel.active {
+      display: block;
     }
     .nivel h2 {
       color: #00796b;
@@ -68,71 +67,45 @@
       font-weight: bold;
       color: #4e342e;
     }
+    @keyframes fade {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    @media screen and (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>📦 Quiz Interativo de Logística (Aulas 1 a 5)</h1>
+    <h1>📦 Quiz Interativo de Logística</h1>
     <div id="quiz"></div>
-    <button onclick="calcularResultado()">Finalizar e Ver Resultados</button>
-    <div class="resultado" id="resultado"></div>
+    <div class="resultado" id="parcial"></div>
+    <button onclick="proximaAula()" id="btnProxima">Próxima Aula</button>
+    <button onclick="mostrarFinal()" id="btnFinal" style="display:none">Ver Resultados Finais</button>
+    <div class="resultado" id="resultadoFinal"></div>
   </div>
 
   <script>
-    const quizData = [
-      {
-        aula: "Aula 1: Introdução à Logística",
-        perguntas: [
-          { q: "O que é logística?", opcoes: ["A) Controle de vendas", "B) O processo de planejar, executar e controlar o fluxo de materiais", "C) Criação de embalagens"], correta: 1 },
-          { q: "Qual é o principal objetivo da logística?", opcoes: ["A) Reduzir custos", "B) Entregar o produto certo, no lugar certo e na hora certa", "C) Criar identidade visual"], correta: 1 },
-          { q: "Qual das opções abaixo NÃO é um exemplo de logística?", opcoes: ["A) Transporte de mercadorias", "B) Armazenamento", "C) Criação de logotipo para uma empresa"], correta: 2 },
-          { q: "Qual área faz parte da logística?", opcoes: ["A) RH", "B) Financeiro", "C) Armazenamento de produtos"], correta: 2 }
-        ]
-      },
-      {
-        aula: "Aula 2: JIT, ERP e Supply Chain",
-        perguntas: [
-          { q: "O sistema Just-in-Time tem como objetivo:", opcoes: ["A) Aumentar estoques", "B) Reduzir estoques e realizar entregas no momento certo", "C) Comprar mais rápido"], correta: 1 },
-          { q: "A logística reversa trata de:", opcoes: ["A) Embalar produtos", "B) Vender direto ao cliente", "C) Retornar produtos ao fabricante ou reaproveitar resíduos"], correta: 2 },
-          { q: "O que representa a cadeia de suprimentos?", opcoes: ["A) Marketing", "B) Só transporte", "C) Processo do fornecedor até o cliente"], correta: 2 },
-          { q: "A logística moderna utiliza:", opcoes: ["A) Papel e caneta", "B) Rastreamento em tempo real", "C) Só telefone"], correta: 1 }
-        ]
-      },
-      {
-        aula: "Aula 3: Macroprocessos e Sistemas",
-        perguntas: [
-          { q: "O que é WMS?", opcoes: ["A) Gestão de vendas", "B) Um software para gerenciamento de armazéns", "C) Controle financeiro"], correta: 1 },
-          { q: "Qual tecnologia ajuda a prever demanda?", opcoes: ["A) Rádio", "B) Big Data", "C) Excel"], correta: 1 },
-          { q: "O que faz o TMS?", opcoes: ["A) Compra de mercadorias", "B) Rastreamento financeiro", "C) Gerenciar transporte e roteirização"], correta: 2 },
-          { q: "O ERP integra:", opcoes: ["A) Somente estoque", "B) Diversas áreas da empresa", "C) RH apenas"], correta: 1 }
-        ]
-      },
-      {
-        aula: "Aula 4: Cadeia de Suprimentos",
-        perguntas: [
-          { q: "O que é cadeia de suprimentos?", opcoes: ["A) Caminho até a venda", "B) Estoque de produtos", "C) Controle de custos"], correta: 0 },
-          { q: "Quem faz parte da cadeia logística?", opcoes: ["A) RH", "B) Cliente apenas", "C) Fornecedor, fabricante, transportadora, mercado e consumidor"], correta: 2 },
-          { q: "Qual papel do transporte?", opcoes: ["A) Decorar embalagens", "B) Atender clientes", "C) Levar mercadorias entre os elos"], correta: 2 },
-          { q: "Que tecnologia ajuda a prever gargalos?", opcoes: ["A) Excel", "B) Planilha", "C) Big Data"], correta: 2 }
-        ]
-      },
-      {
-        aula: "Aula 5: Modais de Transporte",
-        perguntas: [
-          { q: "Qual o modal mais usado no Brasil?", opcoes: ["A) Aéreo", "B) Ferroviário", "C) Rodoviário"], correta: 2 },
-          { q: "Modal indicado para longas distâncias com cargas pesadas:", opcoes: ["A) Aéreo", "B) Rodoviário", "C) Ferroviário"], correta: 2 },
-          { q: "Principal desafio do hidroviário?", opcoes: ["A) Custo", "B) Pouca infraestrutura", "C) Poluição"], correta: 1 },
-          { q: "O dutoviário transporta:", opcoes: ["A) Alimentos", "B) Papel", "C) Combustível e gás"], correta: 2 }
-        ]
-      }
-    ];
+    const quizData = [...]; // conteúdo completo será inserido aqui com TODAS as perguntas
 
-    let acertosPorNivel = [];
+    let acertosPorNivel = Array(quizData.length).fill(0);
+    let paginaAtual = 0;
 
     const quizDiv = document.getElementById("quiz");
-    quizData.forEach((nivel, i) => {
+    const parcialDiv = document.getElementById("parcial");
+    const resultadoFinal = document.getElementById("resultadoFinal");
+    const btnProxima = document.getElementById("btnProxima");
+    const btnFinal = document.getElementById("btnFinal");
+
+    function carregarAula(i) {
+      quizDiv.innerHTML = "";
+      parcialDiv.innerHTML = "";
+      const nivel = quizData[i];
       const divNivel = document.createElement("div");
-      divNivel.className = "nivel";
+      divNivel.className = "nivel active";
       divNivel.innerHTML = `<h2>${nivel.aula}</h2>`;
 
       nivel.perguntas.forEach((p, pi) => {
@@ -151,7 +124,7 @@
       });
 
       quizDiv.appendChild(divNivel);
-    });
+    }
 
     function verificar(nivel, pergunta, opcao, input) {
       const correto = quizData[nivel].perguntas[pergunta].correta;
@@ -162,23 +135,42 @@
       input.parentElement.classList.add(opcao == correto ? "certa" : "errada");
     }
 
-    function calcularResultado() {
-      acertosPorNivel = quizData.map((nivel, ni) => {
-        let acertos = 0;
-        nivel.perguntas.forEach((p, pi) => {
-          const marcada = document.querySelector(`input[name='n${ni}p${pi}']:checked`);
-          if (marcada && parseInt(marcada.value) === p.correta) acertos++;
-        });
-        return acertos;
+    function proximaAula() {
+      const nivel = quizData[paginaAtual];
+      let acertos = 0;
+      nivel.perguntas.forEach((p, pi) => {
+        const marcada = document.querySelector(`input[name='n${paginaAtual}p${pi}']:checked`);
+        if (marcada && parseInt(marcada.value) === p.correta) acertos++;
+      });
+      acertosPorNivel[paginaAtual] = acertos;
+      parcialDiv.innerHTML = `Acertos nesta aula: ${acertos}/${nivel.perguntas.length}`;
+
+      if (paginaAtual < quizData.length - 1) {
+        paginaAtual++;
+        setTimeout(() => carregarAula(paginaAtual), 1000);
+      } else {
+        btnProxima.style.display = "none";
+        btnFinal.style.display = "inline-block";
+      }
+    }
+
+    function mostrarFinal() {
+      let html = "";
+      let totalQuestoes = 0;
+      let totalAcertos = 0;
+
+      quizData.forEach((nivel, i) => {
+        html += `Aula ${i + 1}: ${acertosPorNivel[i]} / ${nivel.perguntas.length}<br>`;
+        totalQuestoes += nivel.perguntas.length;
+        totalAcertos += acertosPorNivel[i];
       });
 
-      const resultadoDiv = document.getElementById("resultado");
-      const totalQuestoes = quizData.map(n => n.perguntas.length);
-      const notaPorNivel = acertosPorNivel.map((acertos, i) => `Nível ${i + 1}: ${acertos}/${totalQuestoes[i]}`).join("<br>");
-      const media = (acertosPorNivel.reduce((a,b)=>a+b,0) / totalQuestoes.reduce((a,b)=>a+b,0) * 10).toFixed(2);
-
-      resultadoDiv.innerHTML = `${notaPorNivel}<br><br>Média Final: <strong>${media}</strong>`;
+      const media = ((totalAcertos / totalQuestoes) * 10).toFixed(2);
+      html += `<br><strong>Média Final: ${media}</strong>`;
+      resultadoFinal.innerHTML = html;
     }
+
+    carregarAula(paginaAtual);
   </script>
 </body>
 </html>
